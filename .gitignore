@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+.spyproject/
+.idea/
+.vscode/
+.pytest_cache/
+results/
+nba_league_underrated_scores_*.csv
+nba_top_100_underrated_*.csv
+*_underrated_????-??.csv
+.DS_Store
+Thumbs.db
