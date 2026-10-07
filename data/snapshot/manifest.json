@@ -1,0 +1,41 @@
+{
+  "season": "2025-26",
+  "season_type": "Regular Season",
+  "retrieved_at_utc": "2026-10-06T22:59:31.873860+00:00",
+  "source": "NBA Stats via nba_api",
+  "tables": {
+    "base": {
+      "rows": 582,
+      "sha256": "e70c76676df0439f6a20ce49da1dd76c612e1315e7dcc7d48069fd0d5524b3fa",
+      "endpoint": "leaguedashplayerstats",
+      "parameters": {
+        "Season": "2025-26",
+        "SeasonType": "Regular Season",
+        "MeasureType": "Base",
+        "PerMode": "PerGame"
+      }
+    },
+    "advanced": {
+      "rows": 582,
+      "sha256": "d3d0bbfe7ffd18e5b31851740cf9616b4a2bad4467b1e488d2cc563926109d09",
+      "endpoint": "leaguedashplayerstats",
+      "parameters": {
+        "Season": "2025-26",
+        "SeasonType": "Regular Season",
+        "MeasureType": "Advanced",
+        "PerMode": "PerGame"
+      }
+    },
+    "defense": {
+      "rows": 580,
+      "sha256": "fa5ae63e329a8e6c77ab32e1530c91cc71d69e021789f9de8fff7c0219e77a5b",
+      "endpoint": "leaguedashptdefend",
+      "parameters": {
+        "Season": "2025-26",
+        "SeasonType": "Regular Season",
+        "DefenseCategory": "Overall",
+        "PerMode": "Totals"
+      }
+    }
+  }
+}

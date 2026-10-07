@@ -14,3 +14,7 @@ nba_top_100_underrated_*.csv
 *_underrated_????-??.csv
 .DS_Store
 Thumbs.db
+.ruff_cache/
+*.egg-info/
+build/
+dist/

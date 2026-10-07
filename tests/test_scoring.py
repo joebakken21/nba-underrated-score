@@ -8,17 +8,34 @@ import numpy as np
 import pandas as pd
 
 from nba_underrated_score import (
-    add_salary_data, calculate_underrated_scores, merge_data, print_summary,
+    add_salary_data,
+    calculate_underrated_scores,
+    merge_data,
+    print_summary,
 )
 
 
 def sample():
-    return pd.DataFrame([{
-        "PLAYER_ID": 1, "PLAYER_NAME": "Example Player", "TEAM_ABBREVIATION": "AAA",
-        "GP": 40, "MIN": 20.0, "PTS": 10.0, "AST": 4.0, "REB": 5.0,
-        "TS_PCT": 0.65, "AST_TO": 4.0, "NET_RATING": 0.0, "USG_PCT": 0.175,
-        "PIE": 0.125, "PCT_PLUSMINUS": 0.0,
-    }])
+    return pd.DataFrame(
+        [
+            {
+                "PLAYER_ID": 1,
+                "PLAYER_NAME": "Example Player",
+                "TEAM_ABBREVIATION": "AAA",
+                "GP": 40,
+                "MIN": 20.0,
+                "PTS": 10.0,
+                "AST": 4.0,
+                "REB": 5.0,
+                "TS_PCT": 0.65,
+                "AST_TO": 4.0,
+                "NET_RATING": 0.0,
+                "USG_PCT": 0.175,
+                "PIE": 0.125,
+                "PCT_PLUSMINUS": 0.0,
+            }
+        ]
+    )
 
 
 class ScoringTests(unittest.TestCase):
@@ -29,7 +46,7 @@ class ScoringTests(unittest.TestCase):
         # Independently calculated baseline: production 64.63157894736842,
         # investment 24.39473684210526; no performance penalty.
         self.assertAlmostEqual(result["underrated_score"], 2.64940668824164)
-        self.assertEqual(result["rating"], "Seriously Underrated")
+        self.assertEqual(result["rating"], "High heuristic value")
         self.assertEqual(result["league_rank"], 1)
         pd.testing.assert_frame_equal(data, before)
 

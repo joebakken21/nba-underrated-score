@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nba-underrated-score"
+version = "0.2.0"
+description = "Reproducible NBA player-value heuristics and sensitivity analysis"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.26,<3", "pandas>=2.2,<4", "nba_api>=1.11,<2"]
+
+[project.optional-dependencies]
+dev = ["ruff==0.16.10"]
+plots = ["matplotlib>=3.9,<4"]
+
+[project.scripts]
+nba-value = "nba_value.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["nba_value*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
