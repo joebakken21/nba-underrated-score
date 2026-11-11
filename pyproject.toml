@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nba-underrated-score"
-version = "0.3.0"
+version = "0.3.1"
 description = "Reproducible NBA player-value heuristics and sensitivity analysis"
 readme = "README.md"
 requires-python = ">=3.11"

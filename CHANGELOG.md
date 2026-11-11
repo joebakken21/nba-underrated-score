@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 — Public dashboard on GitHub Pages
+
+- Add a public dashboard at `docs/index.html`, served by GitHub Pages: scoreboard KPI cards, a top 25 leaderboard with a qualified/all toggle, a production-versus-investment chart, team hidden value, and the v2.1 methodology. It is one static page with no external libraries and uses team-color badges instead of logos.
+- Add the 2026–27 snapshot it reads, `docs/data/player_scores_2026-27.csv` (407 players, loaded November 11, 2026).
+- The loader now rewrites that snapshot on every run (`PAGES_EXPORT` in SETTINGS), with a clear stop if the file is locked or the docs folder is missing.
+
 ## 0.3.0 — Live 2026–27 pipeline and dashboard
 
 - Add formula v2.1: Underrated Score = (Production Value x Performance Penalty) / max(Investment Index, 5), with percentile-scaled components, on/off efficiency, a carry-tax role measure, and decayed award recognition.

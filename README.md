@@ -9,7 +9,7 @@
 ![BigQuery](https://img.shields.io/badge/Google_BigQuery-live-1D428A?style=flat-square&logo=googlebigquery&logoColor=white)
 ![nba_api](https://img.shields.io/badge/data-nba__api-C8102E?style=flat-square)
 
-[Methodology](docs/METHODOLOGY.md) · [Data dictionary](docs/DATA_DICTIONARY.md) · [2025–26 research case study](docs/RESULTS.md) · [Changelog](CHANGELOG.md)
+**[Live dashboard](https://joebakken21.github.io/nba-underrated-score/)** · [Methodology](docs/METHODOLOGY.md) · [Data dictionary](docs/DATA_DICTIONARY.md) · [2025–26 research case study](docs/RESULTS.md) · [Changelog](CHANGELOG.md)
 
 ## 34 of 172 qualified players rate as Seriously Underrated in the 2026–27 season
 
@@ -26,8 +26,8 @@ The November 11, 2026 load scored **407 players across all 30 teams**. **172 pla
 
 | Rank | Player | Team | GP | MPG | Score |
 | ---: | --- | --- | ---: | ---: | ---: |
-| 1 | Alex Caruso | OKC | 8 | 18.4 | 3.83 |
-| 2 | Ryan Kalkbrenner | CHA | 11 | 18.8 | 3.83 |
+| 1 | Ryan Kalkbrenner | CHA | 11 | 18.8 | 3.83 |
+| 2 | Alex Caruso | OKC | 8 | 18.4 | 3.83 |
 | 3 | Ryan Dunn | PHX | 10 | 17.6 | 3.57 |
 | 4 | Josh Green | UTA | 9 | 19.4 | 3.49 |
 | 5 | Emanuel Sharp | SAC | 11 | 18.2 | 3.18 |
@@ -55,7 +55,8 @@ flowchart LR
     B --> C[Score with formula v2.1]
     C --> D[Local CSV export]
     C --> E[(Google BigQuery<br/>player_scores)]
-    E --> F[Live dashboard]
+    C --> G[docs/data CSV snapshot]
+    G --> F[Public dashboard<br/>GitHub Pages]
 ```
 
 | Stage | What happens |
@@ -63,21 +64,23 @@ flowchart LR
 | **Extract** | Pulls per-game, advanced, defensive, touches, on/off, roster, and award data for one season from the NBA Stats API, with retries, pacing, and a same-day cache. |
 | **Transform** | Joins one row per player, scales each component 0–100 by percentile, applies the v2.1 weights, penalty, tiers, and qualifying gates, and records every approximation on each row. |
 | **Load** | Replaces the selected season's rows in BigQuery with a single `WRITE_TRUNCATE` load job, keeps other seasons intact, and runs on BigQuery's free tier without DML. |
-| **Serve** | The dashboard queries the BigQuery table directly with read-only SQL. |
+| **Serve** | Each run also writes `docs/data/player_scores_<season>.csv`. Committing that file refreshes the public dashboard on GitHub Pages. |
 
 The loader is [`pipelines/11-11-2026-nba-underrated-score-loader-spyder.py`](pipelines/11-11-2026-nba-underrated-score-loader-spyder.py). It is organized as Spyder cells (`# %%`), keeps every setting in one cell, and stops with a plain-language explanation for each known failure: missing packages, NBA API timeouts, empty seasons, unreadable input files, Google Cloud sign-in, and BigQuery permission or schema errors.
 
 ## The live dashboard
 
-The dashboard reads the BigQuery table in real time and presents the results in an NBA broadcast style:
+**[joebakken21.github.io/nba-underrated-score](https://joebakken21.github.io/nba-underrated-score/)**
+
+The public dashboard presents the latest load in an NBA broadcast style:
 
 - **Scoreboard KPI cards:** players scored, players qualified, the number-one qualified player, and the share rated Seriously Underrated.
-- **Top 25 leaderboard** with team logos and tiers, togglable between qualified players and all players.
+- **Top 25 leaderboard** with team-color badges and tiers, togglable between qualified players and all players.
 - **Production vs. investment scatter plot:** underrated players sit high and to the left.
 - **Team hidden-value chart:** which rosters hold the most underrated production.
 - **Methodology panel** documenting formula v2.1, the gates, the data sources, and the limitations.
 
-The dashboard is hosted privately. A walkthrough is available on request.
+It is a single static page ([`docs/index.html`](docs/index.html)) with no build step and no external libraries. It reads the committed snapshot in [`docs/data/`](docs/data/), which the loader rewrites on every run.
 
 ## Run the live pipeline
 
@@ -94,6 +97,7 @@ The dashboard is hosted privately. A walkthrough is available on request.
    ```
 
 3. Open the loader in Spyder, set `PROJECT` to your Google Cloud project ID in the SETTINGS cell, and press F5. Set `DRY_RUN = True` to score and save the CSV without touching BigQuery.
+4. Commit and push the refreshed `docs/data/player_scores_<season>.csv` to update the public dashboard. Set `PAGES_EXPORT = False` to skip that file.
 
 The NBA Stats API often blocks cloud and data-center networks, so run the loader from a home or personal network.
 
@@ -151,6 +155,7 @@ Salary CSV schema: `PLAYER_ID,SEASON,SALARY,SOURCE_URL`. Every eligible player n
 | Location | Responsibility |
 | --- | --- |
 | `pipelines/` | Live v2.1 loader: NBA Stats API to BigQuery, built for Spyder |
+| `docs/index.html`, `docs/data/` | Public dashboard (GitHub Pages) and its CSV snapshot |
 | `nba_value/data.py` | Research edition: API retrieval, snapshots, and integrity checks |
 | `nba_value/scoring.py` | Research edition: pure validation and scoring transformations (model v2) |
 | `nba_value/diagnostics.py` | Matched-cohort sensitivity comparisons |

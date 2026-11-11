@@ -8,7 +8,8 @@ What it does
 1. Pulls one season of player data from the NBA Stats API (nba_api).
 2. Scores every player (5+ minutes per game) with Underrated Score v2.1.
 3. Saves a CSV of the scores next to this file.
-4. Replaces that season's rows in BigQuery:
+4. Refreshes the public dashboard's data file in docs/data/ (see PAGES_EXPORT).
+5. Replaces that season's rows in BigQuery:
        <PROJECT>.nba_underrated_score.player_scores   (PROJECT is set in SETTINGS)
    Rows for other seasons are kept as they are. No other table or dataset
    is touched. Works on BigQuery's free tier (no billing needed).
@@ -34,6 +35,11 @@ Each run:
 After a run, these are in the Variable Explorer:
     frames     the raw nba_api tables (dict of DataFrames)
     scores     the scored players, one row per player
+
+Updating the public dashboard (GitHub Pages):
+    The page in docs/index.html reads docs/data/player_scores_<SEASON>.csv.
+    Each run rewrites that file. Commit and push it, and the page shows the
+    new numbers a minute or two later. Set PAGES_EXPORT to False to skip it.
 
 Re-running is cheap: the raw pull is cached in the "cache" folder next to this
 file, so a second run the same day skips the slow download. Set USE_CACHE to
@@ -87,6 +93,9 @@ SALARY_FILE = None  # e.g. r"C:\path\to\salaries_2026-27.csv"
 VOTES_FILE = None  # e.g. r"C:\path\to\allstar_votes.csv"
 
 USE_CACHE = True  # reuse today's raw pull if it exists
+
+# Public dashboard data file. Written to docs/data/ in this repository each run.
+PAGES_EXPORT = True  # False = don't touch the dashboard's CSV
 MAX_SALARY = 0.35 * 154_647_000  # one league-wide max tier, used without MAX_ELIGIBLE
 
 # BigQuery destination. Only rows for SEASON in this table are replaced.
@@ -774,6 +783,73 @@ def save_csv(df, season):
     return path
 
 
+# Columns the public dashboard reads, in order, and how many decimals each keeps.
+PAGES_COLUMNS = {
+    "PLAYER_ID": None,
+    "PLAYER_NAME": None,
+    "TEAM_ABBREVIATION": None,
+    "GP": None,
+    "MIN": 1,
+    "PTS": 1,
+    "REB": 1,
+    "AST": 1,
+    "TS_PCT": 3,
+    "NET_RATING": 1,
+    "USG_PCT": 3,
+    "production_value": 1,
+    "investment_index": 1,
+    "penalty_multiplier": 2,
+    "underrated_score": 3,
+    "rating": None,
+    "qualified": None,
+    "gp_gate": None,
+    "league_rank": None,
+    "loaded_at": None,
+}
+
+
+def save_pages_csv(df, season):
+    """Rewrite the public dashboard's data file: docs/data/player_scores_<season>.csv.
+
+    The file holds only the columns the page shows, rounded for display.
+    It's plain UTF-8 with Unix line endings, so git diffs stay small.
+    """
+    folder = os.path.normpath(os.path.join(HERE, "..", "docs", "data"))
+    if not os.path.isdir(os.path.dirname(folder)):
+        # No docs folder means this file isn't sitting in the repository's pipelines/ folder.
+        raise LoaderError(
+            f"Couldn't find the dashboard folder {os.path.dirname(folder)}.\n"
+            "Fix: run the loader from the repository's pipelines folder, or set "
+            "PAGES_EXPORT = False in SETTINGS."
+        )
+    path = os.path.join(folder, f"player_scores_{season}.csv")
+
+    missing = [c for c in PAGES_COLUMNS if c not in df.columns]
+    if missing:
+        raise LoaderError(f"The scores are missing columns the dashboard needs: {missing}")
+
+    out = df[list(PAGES_COLUMNS)].copy()
+    out = out.sort_values("league_rank").reset_index(drop=True)
+    for col, places in PAGES_COLUMNS.items():
+        if places is not None:
+            out[col] = out[col].astype(float).map(lambda v, p=places: f"{v:.{p}f}")
+    out["qualified"] = out["qualified"].map(lambda v: "true" if bool(v) else "false")
+    out["loaded_at"] = pd.to_datetime(out["loaded_at"], utc=True).dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    try:
+        os.makedirs(folder, exist_ok=True)
+        out.to_csv(path, index=False, encoding="utf-8", lineterminator="\n")
+    except PermissionError:
+        raise LoaderError(
+            f"Couldn't save {path} because it's open in another program "
+            f"(usually Excel). Close it and run again."
+        ) from None
+    except OSError as exc:
+        raise LoaderError(f"Couldn't write the dashboard file {path}: {exc}") from None
+    log(f"Updated the dashboard data file {path}. Commit and push it to refresh the page.")
+    return path
+
+
 # %% STAGE 3: LOAD INTO BIGQUERY
 # ---------------------------------------------------------------------------
 # Your project runs on BigQuery's free tier (the "sandbox"), which doesn't
@@ -920,6 +996,8 @@ def run():
         log("Scoring players ...")
         scores = score(frames, SEASON, salaries, votes)
         save_csv(scores, SEASON)
+        if PAGES_EXPORT:
+            save_pages_csv(scores, SEASON)
 
         top = scores.loc[
             scores["qualified"], ["PLAYER_NAME", "TEAM_ABBREVIATION", "underrated_score", "rating"]

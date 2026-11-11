@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NBA Underrated Score</title>
+<meta name="description" content="Underrated Score v2.1 for every 2026-27 NBA player: production value divided by estimated salary, opportunity and recognition.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ---------- Tokens: light by default, dark when the system asks ---------- */
+:root {
+  --navy: #0B2A66; --navy-2: #1D428A; --red: #C8102E; --ink: #0A1628;
+  --bg: #F4F6FA; --surface: #FFFFFF; --fg: #0A1628; --fg-muted: #4A5872; --line: #D9DFEA;
+  --grid: #E6EAF2; --axis: #9AA6BC; --muted-bar: #9AA6BC; --ref: #6B7891;
+  --stripe: rgba(29, 66, 138, .05); --hover: rgba(200, 16, 46, .08);
+  --cond: "Barlow Condensed", "Oswald", "Roboto Condensed", "Arial Narrow", sans-serif;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --radius: 8px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #070F1E; --surface: #0E1A30; --fg: #E8EDF6; --fg-muted: #A3B0C7; --line: #22314F;
+    --grid: #1A2742; --axis: #4C5B78; --muted-bar: #4C5B78; --ref: #8796B2;
+    --stripe: rgba(255, 255, 255, .03); --hover: rgba(200, 16, 46, .16);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #070F1E; --surface: #0E1A30; --fg: #E8EDF6; --fg-muted: #A3B0C7; --line: #22314F;
+  --grid: #1A2742; --axis: #4C5B78; --muted-bar: #4C5B78; --ref: #8796B2;
+  --stripe: rgba(255, 255, 255, .03); --hover: rgba(200, 16, 46, .16);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 24px 16px 48px; display: flex; flex-direction: column; gap: 28px; }
+h1, h2, .card-label, .card-value, table th, .toggle button, details summary, .season, .badge, .team-label, .val {
+  font-family: var(--cond); }
+a { color: inherit; }
+
+/* ---------- Broadcast banner ---------- */
+.head { position: relative; overflow: hidden; border-radius: var(--radius); color: #fff;
+  background: radial-gradient(circle at 108% -30%, rgba(255,255,255,.09) 0 38%, transparent 38.5%),
+              radial-gradient(circle at 108% -30%, transparent 0 52%, rgba(255,255,255,.08) 52.5% 53.2%, transparent 53.7%),
+              linear-gradient(120deg, var(--ink) 0%, var(--navy) 45%, var(--navy-2) 100%);
+  border-bottom: 5px solid var(--red); padding: 24px 28px; }
+.head h1 { font-weight: 800; font-size: clamp(1.7rem, 5vw, 2.6rem); line-height: 1; text-transform: uppercase; letter-spacing: .01em; margin: 0 0 8px; }
+.season { display: inline-block; vertical-align: middle; background: var(--red); color: #fff; font-weight: 700; font-size: .5em; padding: 2px 8px; border-radius: 3px; margin-left: 4px; letter-spacing: .04em; }
+.byline { color: rgba(255,255,255,.72); font-size: .8rem; margin: 0 0 14px; text-transform: uppercase; letter-spacing: .06em; }
+.lede { margin: 0; max-width: 62ch; color: rgba(255,255,255,.92); }
+.lede b { color: #fff; }
+.caveat { color: rgba(255,255,255,.62); font-size: .8rem; margin: 10px 0 0; max-width: 75ch; line-height: 1.45; }
+
+/* ---------- Scoreboard KPI cards ---------- */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+.card { background: linear-gradient(180deg, #13284F 0%, var(--ink) 100%); color: #fff; border: 1px solid rgba(255,255,255,.08);
+  border-left: 4px solid var(--red); border-radius: var(--radius); padding: 14px 18px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.card-label { font-size: .85rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #FF7A8C; }
+.card-value { font-weight: 800; font-size: 2.5rem; font-variant-numeric: tabular-nums; line-height: 1; color: #fff; }
+.card-value.name { font-size: 1.5rem; text-transform: uppercase; line-height: 1.05; overflow-wrap: anywhere; }
+.card-sub { font-size: .8rem; color: rgba(255,255,255,.72); font-variant-numeric: tabular-nums; }
+.top-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+/* ---------- Sections ---------- */
+.section h2 { font-size: 1.5rem; font-weight: 800; text-transform: uppercase; letter-spacing: .01em; line-height: 1.1;
+  margin: 0 0 6px; padding-left: 10px; border-left: 5px solid var(--red); }
+.sub { color: var(--fg-muted); font-size: .85rem; margin: 0 0 14px; max-width: 72ch; line-height: 1.45; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.toggle { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin-bottom: 14px; background: var(--surface); }
+.toggle button { font-size: .95rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 6px 16px; border: 0; background: transparent; color: var(--fg-muted); cursor: pointer; }
+.toggle button[aria-pressed="true"] { background: var(--navy-2); color: #fff; }
+.toggle button:focus-visible { outline: 2px solid var(--red); outline-offset: -2px; }
+
+/* ---------- Team badges: team-color circle with the abbreviation ---------- */
+.badge { --sz: 24px; width: var(--sz); height: var(--sz); flex: none; border-radius: 50%; color: #fff; background: var(--navy-2);
+  display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: calc(var(--sz) * .36); letter-spacing: -.02em;
+  box-shadow: 0 0 0 1.5px rgba(255,255,255,.85), 0 0 0 2.5px rgba(10,22,40,.25); vertical-align: middle; }
+.badge.lg { --sz: 44px; }
+.team { display: inline-flex; align-items: center; gap: 7px; font-weight: 600; }
+
+/* ---------- Tables ---------- */
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .85rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 7px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th { color: #fff; font-weight: 700; font-size: .9rem; text-transform: uppercase; letter-spacing: .05em; background: var(--navy); }
+th.l, td.l { text-align: left; }
+tbody tr:nth-child(even) td { background: var(--stripe); }
+tbody tr:hover td { background: var(--hover); }
+tbody tr:last-child td { border-bottom: 0; }
+td.rank { font-family: var(--cond); font-weight: 800; font-size: 1rem; }
+tbody tr:nth-child(-n+3) td.rank { color: var(--red); }
+td.player { font-weight: 600; }
+td.score { font-family: var(--cond); font-weight: 800; font-size: 1.05rem; }
+.pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: .78rem; border: 1px solid var(--line); font-weight: 600; }
+.note { color: var(--fg-muted); font-size: .8rem; margin: 10px 0 0; }
+
+/* ---------- Charts ---------- */
+.chart { position: relative; padding: 8px 8px 4px; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart .tick { fill: var(--fg-muted); font-size: 12px; font-family: var(--sans); }
+.chart .axis-label { fill: var(--fg-muted); font-size: 12px; font-family: var(--sans); }
+.chart .team-label, .chart .val { fill: var(--fg); font-weight: 700; font-size: 13px; }
+.chart .badge-text { fill: #fff; font-family: var(--cond); font-weight: 800; font-size: 8px; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--red);
+  box-shadow: 0 6px 20px rgba(10,22,40,.18); border-radius: var(--radius); padding: 8px 12px; font-size: .8rem; line-height: 1.4;
+  max-width: 250px; z-index: 2; opacity: 0; transition: opacity .08s; }
+.tip strong { display: block; }
+.tip span { display: block; color: var(--fg-muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .8rem; color: var(--fg-muted); margin: 0 0 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+/* ---------- Methodology ---------- */
+details.method { background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--navy-2); border-radius: var(--radius); padding: 14px 20px; }
+details.method summary { cursor: pointer; font-weight: 800; font-size: 1.15rem; text-transform: uppercase; letter-spacing: .03em; }
+details.method h3 { font-size: .95rem; font-weight: 600; margin: 18px 0 4px; }
+details.method p, details.method li { font-size: .85rem; line-height: 1.55; max-width: 78ch; }
+details.method ul { padding-left: 1.2em; margin: 0; }
+code { font-size: .85em; background: var(--stripe); padding: 1px 4px; border-radius: 3px; }
+
+footer { color: var(--fg-muted); font-size: .8rem; border-top: 1px solid var(--line); padding-top: 16px; line-height: 1.6; }
+.error { background: var(--surface); border: 1px solid var(--red); border-radius: var(--radius); padding: 14px 18px; }
+
+@media (max-width: 480px) {
+  .head { padding: 18px 18px; }
+  .card-value { font-size: 2.1rem; }
+  .card-value.name { font-size: 1.25rem; }
+  details.method { padding: 12px 14px; }
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <header class="head" id="overview">
+    <h1>NBA Underrated Score <span class="season" id="season-tag">2026-27</span></h1>
+    <p class="byline">Python · pandas · nba_api · Google BigQuery · <span id="as-of">loading data</span></p>
+    <p class="lede">
+      <b data-k="top_name">—</b> (<span data-k="top_team">—</span>) leads all <b data-k="qualified">—</b> qualified players
+      with a score of <b data-k="top_score">—</b>. That player's on-court production runs that many times their estimated cost in salary, opportunity and recognition.
+    </p>
+    <p class="caveat">Salary and recognition are modeled estimates, not contract or popularity data. "Qualified" means passing all three v2.1 gates: games played (30 over a full season, scaled to the games played so far), 15+ minutes per game and a Production Value of 50+.</p>
+  </header>
+
+  <div id="error" class="error" hidden></div>
+
+  <section class="kpis" aria-label="Headline numbers">
+    <div class="card">
+      <span class="card-label">Players scored</span>
+      <span class="card-value" data-k="players">—</span>
+      <span class="card-sub">across <span data-k="teams">—</span> teams, 5+ minutes per game</span>
+    </div>
+    <div class="card">
+      <span class="card-label">Qualified players</span>
+      <span class="card-value" data-k="qualified">—</span>
+      <span class="card-sub"><span data-k="gp_gate">—</span>+ games, 15+ minutes, Production Value 50+</span>
+    </div>
+    <div class="card">
+      <span class="card-label">#1 underrated (qualified)</span>
+      <div class="top-row">
+        <span id="top-badge"></span>
+        <span class="card-value name" data-k="top_name">—</span>
+      </div>
+      <span class="card-sub"><span data-k="top_team">—</span> · score <span data-k="top_score">—</span></span>
+    </div>
+    <div class="card">
+      <span class="card-label">Rated "Seriously Underrated"</span>
+      <span class="card-value"><span data-k="seriously_pct">—</span>%</span>
+      <span class="card-sub"><span data-k="seriously_q">—</span> qualified players with a score of 2.0 or higher</span>
+    </div>
+  </section>
+
+  <section class="section" id="board">
+    <h2>The 25 most underrated players</h2>
+    <p class="sub">Ranked by Underrated Score: production value divided by estimated investment. Higher means more output per dollar of salary, opportunity and recognition.</p>
+    <div class="toggle" role="group" aria-label="Which players to rank">
+      <button type="button" data-scope="qualified" aria-pressed="true">Qualified</button>
+      <button type="button" data-scope="all" aria-pressed="false">All players</button>
+    </div>
+    <div class="panel tablewrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th class="l">Player</th><th class="l">Team</th>
+          <th>GP</th><th>MPG</th><th>PTS</th><th>REB</th><th>AST</th>
+          <th>TS%</th><th>Net Rtg</th><th>Score</th><th class="l">Rating</th>
+        </tr></thead>
+        <tbody id="board-body"></tbody>
+      </table>
+    </div>
+    <p class="note" id="board-note" hidden><span data-k="small_top25">—</span> of these 25 players miss at least one qualifying gate. Small samples inflate net rating, which is why the default view ranks qualified players only. The # column shows league rank among all scored players.</p>
+  </section>
+
+  <section class="section" id="production-vs-investment">
+    <h2>Production vs. investment: underrated players sit high and to the left</h2>
+    <p class="sub">Each dot is a qualified player. Players above the dashed 2:1 line produce at least twice their estimated investment. Point at a dot for details.</p>
+    <div class="legend" id="legend" aria-hidden="true"></div>
+    <div class="panel chart" id="scatter"></div>
+  </section>
+
+  <section class="section" id="teams">
+    <h2>Which rosters hold the most hidden value</h2>
+    <p class="sub">Average Underrated Score of each team's qualified players. <b data-k="team_top">—</b> leads at <b data-k="team_top_score">—</b>. Point at a bar to see the team's best value player.</p>
+    <div class="panel chart" id="team-chart"></div>
+  </section>
+
+  <details class="method" id="methodology">
+    <summary>Methodology, data sources and limitations</summary>
+    <h3>The formula (v2.1)</h3>
+    <p><code>Underrated Score = (Production Value × Performance Penalty) ÷ max(Investment Index, 5)</code></p>
+    <h3>Production Value (what a player gives)</h3>
+    <ul>
+      <li><b>Efficiency, 35%:</b> true shooting (34), playmaking (23), on/off net rating (43).</li>
+      <li><b>Role difficulty, 30%:</b> defensive versatility (40), workload (33), lineup strength (27).</li>
+      <li><b>Versatility, 35%:</b> positional flexibility (34), two-way impact (43), skill diversity (23).</li>
+    </ul>
+    <p>Each component is scaled 0–100 by percentile among scored players.</p>
+    <h3>Investment Index (what a player costs)</h3>
+    <ul>
+      <li><b>Financial, 40%:</b> salary as a share of the max (65) and dollars per unit of production (35).</li>
+      <li><b>Usage, 35%:</b> usage rate (40), minutes (33), touches (27).</li>
+      <li><b>Recognition, 25%:</b> All-Star votes (40) and awards with a five-year decay (60).</li>
+    </ul>
+    <p>The index has a floor of 5 in the formula, so near-zero cost cannot produce a runaway score.</p>
+    <h3>Performance penalty</h3>
+    <p>Scores are multiplied by 0.3 when net rating is below −10 or TS% is below 45%, by 0.6 when net rating is below −5, and by 0.8 when net rating is negative and TS% is below 52%.</p>
+    <h3>Ratings</h3>
+    <p>2.0 and up: Seriously Underrated. 1.5 to 2.0: Quietly Valuable. 1.0 to 1.5: Fairly Rated. Below 1.0: Properly Rated.</p>
+    <h3>Qualifying gates</h3>
+    <p>30+ games over a full season, scaled to the games played so far, 15+ minutes per game, and a Production Value of 50+.</p>
+    <h3>Data</h3>
+    <p>Stats come from the NBA Stats API via <code>nba_api</code>, are scored by a Python loader (pandas, NumPy) and stored in Google BigQuery. Each loader run also writes the CSV snapshot this page reads, so the page updates when a new snapshot is committed. Players averaging 5+ minutes are scored.</p>
+    <h3>Limitations</h3>
+    <ul>
+      <li>Salary is an estimated tier from minutes and scoring, not contract data, and every player is measured against one league-wide max.</li>
+      <li>All-Star votes are estimated from past All-Star selections.</li>
+      <li>Defensive versatility, two-way impact, positional flexibility and lineup strength use the closest stats <code>nba_api</code> offers.</li>
+      <li>Early in the season samples are small, so scores move a lot from load to load.</li>
+    </ul>
+  </details>
+
+  <footer>
+    Source code, methodology and data dictionary: <a href="https://github.com/joebakken21/nba-underrated-score">github.com/joebakken21/nba-underrated-score</a>.
+    Snapshot: <a href="data/" id="csv-link">player scores CSV</a>.<br>
+    Statistics originate from NBA Stats through the community-maintained nba_api client. This is an independent portfolio project, not affiliated with or endorsed by the NBA or any team.
+  </footer>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- Settings ----------
+  var SEASON = '2026-27';
+  var CSV_URL = 'data/player_scores_' + SEASON + '.csv';
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  var RATINGS = ['Seriously Underrated', 'Quietly Valuable', 'Fairly Rated', 'Properly Rated'];
+  var RATING_LABELS = ['Seriously Underrated (2.0+)', 'Quietly Valuable (1.5–2.0)', 'Fairly Rated (1.0–1.5)', 'Properly Rated (under 1.0)'];
+  var RATING_COLORS = ['#E03A3E', '#2E6FD8', '#8C9AB3', 'var(--muted-bar)'];
+  function ratingColor(r) { return RATING_COLORS[Math.max(0, RATINGS.indexOf(r))]; }
+
+  // Primary team colors for the abbreviation badges (no logos are used).
+  var TEAM_COLORS = {
+    ATL: '#C8102E', BKN: '#111111', BOS: '#007A33', CHA: '#1D1160', CHI: '#CE1141', CLE: '#860038',
+    DAL: '#00538C', DEN: '#0E2240', DET: '#C8102E', GSW: '#1D428A', HOU: '#CE1141', IND: '#002D62',
+    LAC: '#C8102E', LAL: '#552583', MEM: '#5D76A9', MIA: '#98002E', MIL: '#00471B', MIN: '#0C2340',
+    NOP: '#0C2340', NYK: '#006BB6', OKC: '#007AC1', ORL: '#0077C0', PHI: '#006BB6', PHX: '#1D1160',
+    POR: '#E03A3E', SAC: '#5A2D81', SAS: '#3A3D40', TOR: '#CE1141', UTA: '#002B5C', WAS: '#002B5C'
+  };
+  function teamColor(t) { return TEAM_COLORS[t] || '#1D428A'; }
+
+  document.getElementById('season-tag').textContent = SEASON;
+  document.getElementById('csv-link').href = CSV_URL;
+
+  // ---------- Small helpers ----------
+  function svgEl(name, attrs, parent) {
+    var el = document.createElementNS(SVG_NS, name);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(el);
+    return el;
+  }
+  function fmtInt(v) { return Number(v).toLocaleString('en-US'); }
+  function isQualified(p) { return p.qualified === true; }
+  function byScore(a, b) { return b.underrated_score - a.underrated_score || a.league_rank - b.league_rank; }
+
+  // "Nice" axis ticks, so charts read 0, 10, 20 instead of odd values.
+  function niceTicks(lo, hi, count) {
+    var span = hi - lo || 1;
+    var step = Math.pow(10, Math.floor(Math.log10(span / count)));
+    var err = (span / count) / step;
+    if (err >= 7.5) step *= 10; else if (err >= 3.5) step *= 5; else if (err >= 1.5) step *= 2;
+    var start = Math.floor(lo / step) * step, end = Math.ceil(hi / step) * step, ticks = [];
+    for (var v = start; v <= end + step / 2; v += step) ticks.push(Math.round(v * 1e6) / 1e6);
+    return ticks;
+  }
+  function linear(d0, d1, r0, r1) { return function (v) { return r0 + (v - d0) / (d1 - d0) * (r1 - r0); }; }
+
+  function badge(team, large) {
+    var b = document.createElement('span');
+    b.className = 'badge' + (large ? ' lg' : '');
+    b.style.background = teamColor(team);
+    b.textContent = team || '?';
+    b.setAttribute('aria-hidden', 'true');
+    return b;
+  }
+
+  function showTip(tip, host, x, y, lines) {
+    tip.replaceChildren();
+    lines.forEach(function (t, i) {
+      var n = document.createElement(i === 0 ? 'strong' : 'span');
+      n.textContent = t;
+      tip.appendChild(n);
+    });
+    tip.style.opacity = 1;
+    var w = host.clientWidth, tw = tip.offsetWidth;
+    tip.style.left = Math.max(0, Math.min(w - tw, x + 12)) + 'px';
+    tip.style.top = Math.max(0, y - tip.offsetHeight - 8) + 'px';
+  }
+
+  // ---------- CSV parsing (handles quoted fields and UTF-8 names) ----------
+  function parseCSV(text) {
+    var rows = [], row = [], field = '', inQ = false;
+    for (var i = 0; i < text.length; i++) {
+      var c = text[i];
+      if (inQ) {
+        if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQ = false; }
+        else field += c;
+      } else if (c === '"') inQ = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n' || c === '\r') {
+        if (c === '\r' && text[i + 1] === '\n') i++;
+        row.push(field); field = '';
+        if (row.length > 1 || row[0] !== '') rows.push(row);
+        row = [];
+      } else field += c;
+    }
+    if (field !== '' || row.length) { row.push(field); rows.push(row); }
+    var head = rows.shift();
+    return rows.map(function (r) {
+      var o = {};
+      head.forEach(function (h, j) { o[h] = r[j]; });
+      return o;
+    });
+  }
+
+  var NUMERIC = ['GP', 'MIN', 'PTS', 'REB', 'AST', 'TS_PCT', 'NET_RATING', 'USG_PCT', 'production_value',
+    'investment_index', 'penalty_multiplier', 'underrated_score', 'gp_gate', 'league_rank'];
+  function clean(p) {
+    NUMERIC.forEach(function (k) { p[k] = Number(p[k]); });
+    p.qualified = String(p.qualified).toLowerCase() === 'true';
+    return p;
+  }
+
+  // ---------- Derived numbers ----------
+  function summarize(players) {
+    var qualified = players.filter(isQualified).sort(byScore);
+    var top = qualified[0] || {};
+    var seriously = qualified.filter(function (p) { return p.rating === 'Seriously Underrated'; }).length;
+    var top25All = players.slice().sort(byScore).slice(0, 25);
+    var teams = teamTable(qualified);
+    return {
+      players: fmtInt(players.length),
+      teams: fmtInt(new Set(players.map(function (p) { return p.TEAM_ABBREVIATION; })).size),
+      qualified: fmtInt(qualified.length),
+      gp_gate: players.length ? fmtInt(players[0].gp_gate) : '—',
+      top_name: top.PLAYER_NAME || '—',
+      top_team: top.TEAM_ABBREVIATION || '—',
+      top_score: top.PLAYER_NAME ? top.underrated_score.toFixed(2) : '—',
+      seriously_q: fmtInt(seriously),
+      seriously_pct: qualified.length ? (Math.round(seriously / qualified.length * 1000) / 10).toFixed(1) : '—',
+      small_top25: fmtInt(top25All.filter(function (p) { return !isQualified(p); }).length),
+      team_top: teams[0] ? teams[0].team : '—',
+      team_top_score: teams[0] ? teams[0].avg.toFixed(2) : '—',
+      _qualified: qualified, _all: top25All, _teams: teams, _topTeam: top.TEAM_ABBREVIATION
+    };
+  }
+
+  function teamTable(qualified) {
+    var by = {};
+    qualified.forEach(function (p) { (by[p.TEAM_ABBREVIATION] = by[p.TEAM_ABBREVIATION] || []).push(p); });
+    return Object.keys(by).map(function (team) {
+      var roster = by[team];
+      var best = roster.slice().sort(byScore)[0];
+      var avg = roster.reduce(function (s, p) { return s + p.underrated_score; }, 0) / roster.length;
+      return {
+        team: team, players: roster.length, avg: Math.round(avg * 100) / 100,
+        seriously: roster.filter(function (p) { return p.rating === 'Seriously Underrated'; }).length,
+        best: best.PLAYER_NAME, bestScore: best.underrated_score
+      };
+    }).sort(function (a, b) { return b.avg - a.avg || a.team.localeCompare(b.team); });
+  }
+
+  // ---------- Leaderboard ----------
+  function renderBoard(rows, scope) {
+    var body = document.getElementById('board-body');
+    body.replaceChildren();
+    rows.forEach(function (p, i) {
+      var tr = document.createElement('tr');
+      function cell(text, cls) {
+        var td = document.createElement('td');
+        if (cls) td.className = cls;
+        if (text !== null) td.textContent = text;
+        tr.appendChild(td);
+        return td;
+      }
+      cell(String(scope === 'all' ? p.league_rank : i + 1), 'rank');
+      cell(p.PLAYER_NAME, 'l player');
+      var teamTd = cell(null, 'l');
+      var wrap = document.createElement('span');
+      wrap.className = 'team';
+      wrap.appendChild(badge(p.TEAM_ABBREVIATION));
+      wrap.appendChild(document.createTextNode(p.TEAM_ABBREVIATION));
+      teamTd.appendChild(wrap);
+      cell(String(p.GP));
+      cell(p.MIN.toFixed(1));
+      cell(p.PTS.toFixed(1));
+      cell(p.REB.toFixed(1));
+      cell(p.AST.toFixed(1));
+      cell((p.TS_PCT * 100).toFixed(1));
+      cell(p.NET_RATING.toFixed(1));
+      cell(p.underrated_score.toFixed(2), 'score');
+      var pillTd = cell(null, 'l');
+      var pill = document.createElement('span');
+      pill.className = 'pill';
+      var c = ratingColor(p.rating);
+      pill.style.borderColor = c;
+      pill.style.background = 'color-mix(in srgb, ' + c + ' 16%, transparent)';
+      pill.textContent = p.rating;
+      pillTd.appendChild(pill);
+      body.appendChild(tr);
+    });
+    document.getElementById('board-note').hidden = scope !== 'all';
+  }
+
+  // ---------- Scatter: production vs. investment ----------
+  function renderScatter(qualified) {
+    var host = document.getElementById('scatter');
+    host.replaceChildren();
+    var pts = qualified.map(function (p) {
+      return { name: p.PLAYER_NAME, team: p.TEAM_ABBREVIATION, x: p.investment_index, y: p.production_value, s: p.underrated_score, rating: p.rating };
+    }).sort(function (a, b) { return a.s - b.s; });
+    if (!pts.length) return;
+
+    var W = Math.max(300, host.clientWidth - 16);
+    var H = Math.max(300, Math.min(460, Math.round(W * 0.62)));
+    var m = { t: 12, r: 16, b: 52, l: 48 };
+    var xs = pts.map(function (p) { return p.x; }), ys = pts.map(function (p) { return p.y; });
+    var xt = niceTicks(Math.min.apply(null, xs) - 2, Math.max.apply(null, xs) + 2, W < 480 ? 4 : 8);
+    var yt = niceTicks(Math.min.apply(null, ys) - 2, Math.max.apply(null, ys) + 2, 6);
+    var x0 = xt[0], x1 = xt[xt.length - 1], y0 = yt[0], y1 = yt[yt.length - 1];
+    var x = linear(x0, x1, m.l, W - m.r), y = linear(y0, y1, H - m.b, m.t);
+
+    var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img',
+      'aria-label': 'Scatter plot of production value against investment index for qualified players, colored by rating' }, host);
+    yt.forEach(function (v) {
+      svgEl('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: 'var(--grid)' }, svg);
+      svgEl('text', { x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end', class: 'tick' }, svg).textContent = v;
+    });
+    svgEl('line', { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, stroke: 'var(--axis)' }, svg);
+    svgEl('line', { x1: m.l, x2: m.l, y1: m.t, y2: H - m.b, stroke: 'var(--axis)' }, svg);
+    xt.forEach(function (v) {
+      svgEl('line', { x1: x(v), x2: x(v), y1: H - m.b, y2: H - m.b + 5, stroke: 'var(--axis)' }, svg);
+      svgEl('text', { x: x(v), y: H - m.b + 18, 'text-anchor': 'middle', class: 'tick' }, svg).textContent = v;
+    });
+    svgEl('text', { x: W - m.r, y: H - 6, 'text-anchor': 'end', class: 'axis-label' }, svg).textContent = 'Investment index (estimated cost) →';
+    svgEl('text', { transform: 'rotate(-90)', x: -m.t, y: 12, 'text-anchor': 'end', class: 'axis-label' }, svg).textContent = 'Production value →';
+
+    // Dashed 2:1 reference line, clipped to the plot area.
+    var clip = svgEl('clipPath', { id: 'plot-clip' }, svg);
+    svgEl('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b }, clip);
+    svgEl('line', { x1: x(x0), y1: y(2 * x0), x2: x(x1), y2: y(2 * x1), 'clip-path': 'url(#plot-clip)',
+      stroke: 'var(--ref)', 'stroke-dasharray': '5 4', 'stroke-width': 1.5 }, svg);
+    var lx = Math.min(x1, (y1 - 1) / 2);
+    if (lx > x0) svgEl('text', { x: x(lx) + 6, y: y(2 * lx) + 4, class: 'axis-label' }, svg).textContent = '2:1';
+
+    var r = W < 480 ? 3 : 4;
+    pts.forEach(function (p) {
+      svgEl('circle', { cx: x(p.x), cy: y(p.y), r: r, fill: ratingColor(p.rating), 'fill-opacity': .78,
+        stroke: 'var(--surface)', 'stroke-width': .6 }, svg);
+    });
+    var ring = svgEl('circle', { r: 7, fill: 'none', stroke: 'var(--fg)', 'stroke-width': 1.5, opacity: 0 }, svg);
+    var tip = document.createElement('div');
+    tip.className = 'tip';
+    host.appendChild(tip);
+
+    var hit = svgEl('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: 'transparent' }, svg);
+    hit.addEventListener('pointermove', function (ev) {
+      var box = svg.getBoundingClientRect(), k = W / box.width;
+      var px = (ev.clientX - box.left) * k, py = (ev.clientY - box.top) * k;
+      var best = null, bd = Infinity;
+      pts.forEach(function (p) {
+        var d = Math.pow(x(p.x) - px, 2) + Math.pow(y(p.y) - py, 2);
+        if (d < bd) { bd = d; best = p; }
+      });
+      if (!best) return;
+      ring.setAttribute('cx', x(best.x)); ring.setAttribute('cy', y(best.y)); ring.setAttribute('opacity', 1);
+      showTip(tip, host, x(best.x) / k + 8, y(best.y) / k + 8, [best.name + ' · ' + best.team,
+        'Score ' + best.s.toFixed(2) + ' · ' + best.rating,
+        'Production ' + best.y.toFixed(1) + ' · Investment ' + best.x.toFixed(1)]);
+    });
+    hit.addEventListener('pointerleave', function () { ring.setAttribute('opacity', 0); tip.style.opacity = 0; });
+  }
+
+  // ---------- Team hidden-value bars ----------
+  function renderTeams(rows) {
+    var host = document.getElementById('team-chart');
+    host.replaceChildren();
+    if (!rows.length) return;
+    var W = Math.max(300, host.clientWidth - 16);
+    var bh = 22, gap = 4, m = { t: 4, r: 44, b: 26, l: 70 };
+    var H = m.t + m.b + rows.length * (bh + gap);
+    var ticks = niceTicks(0, Math.max.apply(null, rows.map(function (r) { return r.avg; })), W < 480 ? 4 : 6);
+    var x = linear(0, ticks[ticks.length - 1], m.l, W - m.r);
+    var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img',
+      'aria-label': 'Bar chart of average Underrated Score of qualified players by team' }, host);
+    ticks.forEach(function (v) {
+      svgEl('line', { x1: x(v), x2: x(v), y1: m.t, y2: H - m.b, stroke: 'var(--grid)' }, svg);
+      svgEl('text', { x: x(v), y: H - m.b + 16, 'text-anchor': 'middle', class: 'tick' }, svg).textContent = v;
+    });
+    var tip = document.createElement('div');
+    tip.className = 'tip';
+    host.appendChild(tip);
+
+    rows.forEach(function (r, i) {
+      var top = m.t + i * (bh + gap), cy = top + bh / 2;
+      var g = svgEl('g', {}, svg);
+      svgEl('circle', { cx: 13, cy: cy, r: bh / 2, fill: teamColor(r.team), stroke: 'rgba(255,255,255,.85)', 'stroke-width': 1.2 }, g);
+      svgEl('text', { x: 13, y: cy + 3, 'text-anchor': 'middle', class: 'badge-text' }, g).textContent = r.team;
+      svgEl('text', { x: 31, y: cy + 4.5, class: 'team-label' }, g).textContent = r.team;
+      svgEl('rect', { x: m.l, y: top + 2, height: bh - 4, width: Math.max(0, x(r.avg) - m.l), rx: 2,
+        fill: i < 3 ? '#C8102E' : 'var(--muted-bar)' }, g);
+      svgEl('text', { x: x(r.avg) + 6, y: cy + 4.5, class: 'val' }, g).textContent = r.avg.toFixed(2);
+      var hit = svgEl('rect', { x: 0, y: top - gap / 2, width: W, height: bh + gap, fill: 'transparent' }, g);
+      hit.addEventListener('pointermove', function (ev) {
+        var box = host.getBoundingClientRect(), k = W / svg.getBoundingClientRect().width;
+        showTip(tip, host, ev.clientX - box.left, top / k + 8, [r.team,
+          'Avg score ' + r.avg.toFixed(2) + ' across ' + r.players + ' qualified players',
+          r.seriously + ' rated Seriously Underrated',
+          'Best value: ' + r.best + ' (' + r.bestScore.toFixed(2) + ')']);
+      });
+      hit.addEventListener('pointerleave', function () { tip.style.opacity = 0; });
+    });
+  }
+
+  // ---------- Wire everything up ----------
+  function render(players) {
+    var s = summarize(players);
+    document.querySelectorAll('[data-k]').forEach(function (el) {
+      var v = s[el.getAttribute('data-k')];
+      el.textContent = v === undefined || v === null ? '—' : v;
+    });
+    var tb = document.getElementById('top-badge');
+    tb.replaceChildren();
+    if (s._topTeam) tb.appendChild(badge(s._topTeam, true));
+
+    var loaded = players[0] && players[0].loaded_at ? new Date(players[0].loaded_at) : null;
+    document.getElementById('as-of').textContent = loaded && !isNaN(loaded)
+      ? 'Data as of ' + loaded.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : 'Data date unavailable';
+
+    var legend = document.getElementById('legend');
+    legend.replaceChildren();
+    RATING_LABELS.forEach(function (label, i) {
+      var span = document.createElement('span'), sw = document.createElement('i');
+      sw.className = 'swatch';
+      sw.style.background = RATING_COLORS[i];
+      span.appendChild(sw);
+      span.appendChild(document.createTextNode(label));
+      legend.appendChild(span);
+    });
+
+    var scope = 'qualified';
+    function drawBoard() { renderBoard(scope === 'all' ? s._all : s._qualified.slice(0, 25), scope); }
+    document.querySelectorAll('.toggle button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        scope = btn.getAttribute('data-scope');
+        document.querySelectorAll('.toggle button').forEach(function (b) {
+          b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+        });
+        drawBoard();
+      });
+    });
+    drawBoard();
+
+    function drawCharts() { renderScatter(s._qualified); renderTeams(s._teams); }
+    drawCharts();
+    var lastW = window.innerWidth, timer = null;
+    window.addEventListener('resize', function () {
+      if (window.innerWidth === lastW) return;
+      lastW = window.innerWidth;
+      clearTimeout(timer);
+      timer = setTimeout(drawCharts, 150);
+    });
+  }
+
+  function fail(msg) {
+    var box = document.getElementById('error');
+    box.hidden = false;
+    box.textContent = msg;
+    document.getElementById('as-of').textContent = 'Data unavailable';
+  }
+
+  fetch(CSV_URL, { cache: 'no-cache' })
+    .then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.text();
+    })
+    .then(function (text) {
+      var players = parseCSV(text).map(clean).filter(function (p) { return p.PLAYER_NAME; });
+      if (!players.length) throw new Error('the snapshot has no rows');
+      render(players);
+    })
+    .catch(function (err) {
+      fail('The player data could not be loaded (' + err.message + '). If you opened this file directly from disk, ' +
+        'serve the docs folder instead, for example with "python -m http.server" run inside docs.');
+    });
+})();
+</script>
+</body>
+</html>
