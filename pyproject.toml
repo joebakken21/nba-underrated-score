@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nba-underrated-score"
-version = "0.2.0"
+version = "0.3.0"
 description = "Reproducible NBA player-value heuristics and sensitivity analysis"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -13,6 +13,7 @@ dependencies = ["numpy>=1.26,<3", "pandas>=2.2,<4", "nba_api>=1.11,<2"]
 [project.optional-dependencies]
 dev = ["ruff==0.16.10"]
 plots = ["matplotlib>=3.9,<4"]
+live = ["google-cloud-bigquery>=3.25,<4", "pyarrow>=15", "db-dtypes>=1.2,<2"]
 
 [project.scripts]
 nba-value = "nba_value.cli:main"
@@ -26,3 +27,7 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+# Spyder cell layout: the SETTINGS cell sits above the imports on purpose.
+"pipelines/*" = ["E402"]

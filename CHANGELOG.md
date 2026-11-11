@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0 — Live 2026–27 pipeline and dashboard
+
+- Add formula v2.1: Underrated Score = (Production Value x Performance Penalty) / max(Investment Index, 5), with percentile-scaled components, on/off efficiency, a carry-tax role measure, and decayed award recognition.
+- Add qualifying gates: 30 games over a full season (scaled to games played so far), 15+ minutes per game, and Production Value of 50+.
+- Rename tiers to Seriously Underrated, Quietly Valuable, Fairly Rated, and Properly Rated.
+- Add the Spyder loader in `pipelines/`: NBA Stats API extraction with retries and a same-day cache, v2.1 scoring, CSV export, and a BigQuery load that replaces one season with `WRITE_TRUNCATE` on the free tier.
+- Record the approximations used on every loaded row.
+- Add the live dashboard, which reads the BigQuery table with read-only SQL and presents KPI cards, leaderboards, a production-versus-investment chart, and team hidden value.
+- Add a `live` install option for the BigQuery packages.
+- Document v2.1 in the methodology and the BigQuery columns in the data dictionary. The v2 research edition and its 2025–26 case study are unchanged.
+
 ## 0.2.0 — Portfolio research edition
 
 - Separate pure scoring, API acquisition, exports, diagnostics, and CLI orchestration.
