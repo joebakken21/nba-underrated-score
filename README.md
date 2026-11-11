@@ -1,4 +1,4 @@
-# NBA Underrated Score
+# NBA Underrated Score v2
 
 **A live analytics pipeline that scores every NBA player on production per unit of investment, loads the results to Google BigQuery, and powers a broadcast-style dashboard.**
 
