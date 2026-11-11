@@ -18,3 +18,6 @@ Thumbs.db
 *.egg-info/
 build/
 dist/
+# Live loader output (pipelines/): raw nba_api cache and per-season score CSVs
+pipelines/cache/
+nba_underrated_scores_????-??.csv

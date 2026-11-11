@@ -1,6 +1,102 @@
 # Methodology and model card
 
+This document covers two models:
+
+- **Formula v2.1 (live, 2026–27):** the production model behind the BigQuery table and the live dashboard, built by [`pipelines/11-11-2026-nba-underrated-score-loader-spyder.py`](../pipelines/11-11-2026-nba-underrated-score-loader-spyder.py).
+- **Model v2 (research edition, 2025–26):** the reproducible package in `nba_value/`, used for the sensitivity case study. It is documented from [Intended use](#intended-use) onward.
+
+## Formula v2.1 (live pipeline)
+
+### Score
+
+```text
+Underrated Score = (Production Value x Performance Penalty) / max(Investment Index, 5)
+```
+
+Production Value (PV) and the Investment Index (RI) are each on a 0–100 scale. The floor of 5 on RI prevents near-zero denominators from producing extreme scores. Every component below is scaled 0–100 by percentile among scored players (5+ minutes per game); missing values land at 50.
+
+### Production Value: what a player gives
+
+| Component | Weight in PV | Built from |
+| --- | ---: | --- |
+| Efficiency | 35% | 0.34 true shooting + 0.23 playmaking (assist % and assist-to-turnover) + 0.43 on/off net rating |
+| Role Difficulty | 30% | 0.40 defensive versatility + 0.33 workload (minutes x usage) + 0.27 lineup strength (carry tax) |
+| Versatility | 35% | 0.34 positional flexibility + 0.43 two-way impact + 0.23 skill diversity |
+
+- **Defensive versatility:** opponent field-goal percentage versus expected (70%) and contested-shot volume (30%).
+- **Carry tax:** a lower team net rating with the player off the floor earns more credit.
+- **Two-way impact:** on-court offensive rating above league average plus defensive rating below league average.
+- **Skill diversity:** normalized entropy of points, rebounds, assists, steals, and blocks, each scaled to the league average.
+
+### Investment Index: what a player costs
+
+| Component | Weight in RI | Built from |
+| --- | ---: | --- |
+| Financial | 40% | 0.65 salary as a share of the max-eligible salary + 0.35 salary per unit of production |
+| Usage | 35% | 0.40 usage rate + 0.33 minutes per game + 0.27 touches |
+| Recognition | 25% | 0.40 All-Star votes + 0.60 awards, with a linear five-season decay |
+
+Award credit uses the last five completed seasons at weights of 1.0, 0.8, 0.6, 0.4, and 0.2. Award values range from 10 (MVP) to 1 (All-Rookie Team).
+
+### Performance penalty
+
+| Condition (checked in order) | Multiplier |
+| --- | ---: |
+| Net rating below −10, or true shooting below 45% | 0.30 |
+| Net rating below −5 | 0.60 |
+| Net rating below 0 and true shooting below 52% | 0.80 |
+| Otherwise | 1.00 |
+
+### Qualifying gates
+
+A player is **qualified** when all three hold:
+
+1. **Games played:** 30 over a full season, scaled to the share of the season completed. The gate is `ceil(30 x team games played / 82)`, with a minimum of 1. At the November 11, 2026 load the gate was 5 games.
+2. **Minutes:** 15 or more per game.
+3. **Production Value:** 50 or more.
+
+All players with 5+ minutes per game are scored and stored; the `qualified` flag separates the ranked cohort.
+
+### Tiers
+
+| Tier | Score |
+| --- | --- |
+| Seriously Underrated | 2.0 and above |
+| Quietly Valuable | 1.5 to 2.0 |
+| Fairly Rated | 1.0 to 1.5 |
+| Properly Rated | below 1.0 |
+
+### Data sources
+
+All statistics come from the NBA Stats API through `nba_api`: `LeagueDashPlayerStats` (Base and Advanced), `LeagueDashPtDefend`, `LeagueDashPtStats` (Possessions), `LeagueDashTeamStats`, `PlayerIndex`, `TeamPlayerOnOffSummary`, and `PlayerAwards`. Salaries and All-Star votes can be supplied as CSV files; otherwise they are estimated.
+
+### Approximations
+
+The NBA Stats API does not expose every input the formula calls for. Each loaded row records the approximations used in its `approximations` column:
+
+- **Defensive versatility** uses opponent field-goal percentage versus expected, in place of matchup-by-position data.
+- **Two-way impact** uses on-court offensive and defensive rating versus league average, in place of OBPM and DBPM.
+- **Positional flexibility** uses the roster position listing (G, G-F, F-C), in place of minutes by position.
+- **Lineup strength** uses the team's net rating with the player off the floor.
+- **Salary** is estimated from minutes and scoring ($1.5M to $35M) when no salary file is supplied, and the max-eligible salary uses one league-wide tier.
+- **All-Star votes** use decayed All-Star selections when no votes file is supplied.
+
+### Storage and refresh
+
+The loader writes one row per player per season to the BigQuery table `nba_underrated_score.player_scores`. A refresh replaces only the selected season: it reads the other seasons' rows, combines them with the new scores, and loads the result with a single `WRITE_TRUNCATE` job. This works on BigQuery's free tier, which does not allow DML statements, and leaves the table unchanged if the load fails. Column definitions are in the [data dictionary](DATA_DICTIONARY.md#bigquery-table-player_scores-formula-v21).
+
+### Limitations specific to v2.1
+
+- Percentile scaling makes every component relative to the current cohort, so scores are comparable within a season load and less so across loads.
+- Estimated salaries partly derive from minutes and scoring, which also feed production and usage.
+- Early-season samples are small; the scaled games-played gate reduces but does not remove that noise.
+- On/off and lineup measures carry team and lineup context alongside individual impact.
+
+---
+
 ## Intended use
+
+*This section and those that follow describe the model v2 research edition.*
 
 Generate hypotheses for player-value research using a transparent, reproducible ranking. The output is a scouting starting point, not a recommendation to sign a player. The project does not measure media attention, predict wins, infer causal player impact, or demonstrate an exploitable market inefficiency.
 
